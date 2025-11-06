@@ -52,6 +52,7 @@ Esta API permite gestionar votantes, candidatos y votos en un sistema de votaci√
    ```bash
    cd voting-api
    npm install
+   npm i
    ```
 
 3. **Configurar MySQL**:
