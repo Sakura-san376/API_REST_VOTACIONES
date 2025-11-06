@@ -1,0 +1,359 @@
+openapi: 3.0.3
+info:
+  title: Voting API
+  version: 1.0.0
+  description: >
+    API REST para gestionar votantes, candidatos y votos.
+    Reglas clave:
+      - Un votante no puede ser registrado como candidato (y viceversa).
+      - Cada votante puede emitir un único voto.
+servers:
+  - url: http://localhost:3000
+    description: Local
+tags:
+  - name: Health
+  - name: Voters
+  - name: Candidates
+  - name: Votes
+
+paths:
+  /api/db/health:
+    get:
+      tags: [Health]
+      summary: Comprobar estado de la base de datos
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  db: { type: string, example: ok }
+                  result:
+                    type: object
+                    properties:
+                      ok: { type: integer, example: 1 }
+
+  /api/voters:
+    post:
+      tags: [Voters]
+      summary: Registrar un nuevo votante
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoterCreate'
+            examples:
+              ejemplo:
+                value: { name: "Ana Pérez", email: "ana@example.com" }
+      responses:
+        '201':
+          description: Votante creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voter'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409':
+          description: Conflicto (email duplicado o nombre ya existente como candidato)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      tags: [Voters]
+      summary: Obtener la lista de votantes
+      responses:
+        '200':
+          description: Lista de votantes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Voter' }
+
+  /api/voters/{id}:
+    get:
+      tags: [Voters]
+      summary: Obtener detalles de un votante por ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Votante
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Voter' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Voters]
+      summary: Eliminar un votante por ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean, example: true }
+                  id: { type: integer, example: 1 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: No se puede eliminar (tiene voto registrado)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/candidates:
+    post:
+      tags: [Candidates]
+      summary: Registrar un nuevo candidato
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CandidateCreate' }
+            examples:
+              ejemplo:
+                value: { name: "Laura Gómez", party: "Partido Verde" }
+      responses:
+        '201':
+          description: Candidato creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Candidate' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409':
+          description: Conflicto (ya existe con ese nombre o existe votante con ese nombre)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      tags: [Candidates]
+      summary: Obtener lista de candidatos
+      responses:
+        '200':
+          description: Lista de candidatos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Candidate' }
+
+  /api/candidates/{id}:
+    get:
+      tags: [Candidates]
+      summary: Obtener candidato por ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Candidato
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Candidate' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Candidates]
+      summary: Eliminar candidato por ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean, example: true }
+                  id: { type: integer, example: 2 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: No se puede eliminar (tiene votos)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/votes:
+    post:
+      tags: [Votes]
+      summary: Emitir un voto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VoteCreate' }
+            examples:
+              ejemplo:
+                value: { voter_id: 1, candidate_id: 2 }
+      responses:
+        '201':
+          description: Voto registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VoteCreated' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404':
+          description: Votante o candidato no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: El votante ya emitió su único voto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      tags: [Votes]
+      summary: Obtener todos los votos
+      responses:
+        '200':
+          description: Lista de votos con nombres
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/VoteListItem' }
+
+  /api/votes/{id}:
+    get:
+      tags: [Votes]
+      summary: Obtener voto por ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Voto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VoteListItem' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/votes/statistics:
+    get:
+      tags: [Votes]
+      summary: Obtener estadísticas de la votación
+      responses:
+        '200':
+          description: Estadísticas globales y por candidato
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VoteStatistics' }
+
+components:
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      description: Identificador entero positivo
+      schema:
+        type: integer
+        minimum: 1
+
+  responses:
+    BadRequest:
+      description: Solicitud inválida
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    VoterCreate:
+      type: object
+      required: [name, email]
+      properties:
+        name: { type: string, maxLength: 120 }
+        email: { type: string, format: email, maxLength: 160 }
+    Voter:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: "Ana Pérez" }
+        email: { type: string, example: "ana@example.com" }
+        has_voted: { type: boolean, example: false }
+        created_at: { type: string, format: date-time, example: "2025-11-05T15:30:00Z" }
+
+    CandidateCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 120 }
+        party: { type: string, nullable: true, maxLength: 120 }
+    Candidate:
+      type: object
+      properties:
+        id: { type: integer, example: 2 }
+        name: { type: string, example: "Laura Gómez" }
+        party: { type: string, nullable: true, example: "Partido Verde" }
+        votes: { type: integer, example: 7 }
+        created_at: { type: string, format: date-time, example: "2025-11-05T15:30:00Z" }
+
+    VoteCreate:
+      type: object
+      required: [voter_id, candidate_id]
+      properties:
+        voter_id: { type: integer, minimum: 1 }
+        candidate_id: { type: integer, minimum: 1 }
+    VoteCreated:
+      type: object
+      properties:
+        id: { type: integer, example: 10 }
+        voter_id: { type: integer, example: 1 }
+        candidate_id: { type: integer, example: 2 }
+        message: { type: string, example: "Voto registrado" }
+
+    VoteListItem:
+      type: object
+      properties:
+        id: { type: integer, example: 10 }
+        voter_id: { type: integer, example: 1 }
+        voter_name: { type: string, example: "Ana Pérez" }
+        candidate_id: { type: integer, example: 2 }
+        candidate_name: { type: string, example: "Laura Gómez" }
+        created_at: { type: string, format: date-time, example: "2025-11-05T15:35:00Z" }
+
+    VoteStatistics:
+      type: object
+      properties:
+        totals:
+          type: object
+          properties:
+            total_votes: { type: integer, example: 12 }
+            total_voters_voted: { type: integer, example: 12 }
+        by_candidate:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer, example: 2 }
+              name: { type: string, example: "Laura Gómez" }
+              party: { type: string, nullable: true, example: "Partido Verde" }
+              votes: { type: integer, example: 7 }
+              percentage: { type: number, format: float, example: 58.33 }
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message: { type: string, example: "Mensaje de error" }
+            stack:
+              type: string
+              description: Solo en entorno de desarrollo
