@@ -44,7 +44,7 @@ Esta API permite gestionar votantes, candidatos y votos en un sistema de votaci√
 1. **Clonar el repositorio**:
 
    ```bash
-   git clone https://github.com/tu_usuario/voting-api.git
+   git clone https://github.com/Sakura-san376/API_REST_VOTACIONES.git
    ```
 
 2. **Instalar las dependencias**:
