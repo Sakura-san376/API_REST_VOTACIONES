@@ -26,6 +26,133 @@ components:
       type: http
       scheme: basic
 
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      description: Identificador entero positivo
+      schema:
+        type: integer
+        minimum: 1
+        example: 3
+
+  responses:
+    BadRequest:
+      description: Solicitud inválida
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Solicitud inválida"
+
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Recurso no encontrado"
+
+  schemas:
+    Candidate:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Laura Gómez"
+        party:
+          type: string
+          nullable: true
+          example: "Partido Verde"
+        votes:
+          type: integer
+          example: 7
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-11-05T15:30:00Z"
+
+    VoterCreate:
+      type: object
+      required: [name, email]
+      properties:
+        name: { type: string, maxLength: 120 }
+        email: { type: string, format: email, maxLength: 160 }
+
+    Voter:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: "Ana Pérez" }
+        email: { type: string, example: "ana@example.com" }
+        has_voted: { type: boolean, example: false }
+        created_at: { type: string, format: date-time, example: "2025-11-05T15:30:00Z" }
+
+    VoteCreate:
+      type: object
+      required: [voter_id, candidate_id]
+      properties:
+        voter_id: { type: integer, minimum: 1 }
+        candidate_id: { type: integer, minimum: 1 }
+
+    VoteCreated:
+      type: object
+      properties:
+        id: { type: integer, example: 10 }
+        voter_id: { type: integer, example: 1 }
+        candidate_id: { type: integer, example: 2 }
+        message: { type: string, example: "Voto registrado" }
+
+    VoteListItem:
+      type: object
+      properties:
+        id: { type: integer, example: 10 }
+        voter_id: { type: integer, example: 1 }
+        voter_name: { type: string, example: "Ana Pérez" }
+        candidate_id: { type: integer, example: 2 }
+        candidate_name: { type: string, example: "Laura Gómez" }
+        created_at: { type: string, format: date-time, example: "2025-11-05T15:35:00Z" }
+
+    VoteStatistics:
+      type: object
+      properties:
+        totals:
+          type: object
+          properties:
+            total_votes: { type: integer, example: 12 }
+            total_voters_voted: { type: integer, example: 12 }
+        by_candidate:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer, example: 2 }
+              name: { type: string, example: "Laura Gómez" }
+              party: { type: string, nullable: true, example: "Partido Verde" }
+              votes: { type: integer, example: 7 }
+              percentage: { type: number, format: float, example: 58.33 }
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message: { type: string, example: "Mensaje de error" }
+            stack:
+              type: string
+              description: Solo en entorno de desarrollo
+
 paths:
   /api/db/health:
     get:
@@ -260,110 +387,3 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/VoteStatistics' }
 
-components:
-  parameters:
-    IdParam:
-      name: id
-      in: path
-      required: true
-      description: Identificador entero positivo
-      schema:
-        type: integer
-        minimum: 1
-
-  responses:
-    BadRequest:
-      description: Solicitud inválida
-      content:
-        application/json:
-          schema: { $ref: '#/components/schemas/Error' }
-    NotFound:
-      description: Recurso no encontrado
-      content:
-        application/json:
-          schema: { $ref: '#/components/schemas/Error' }
-
-  schemas:
-    VoterCreate:
-      type: object
-      required: [name, email]
-      properties:
-        name: { type: string, maxLength: 120 }
-        email: { type: string, format: email, maxLength: 160 }
-    Voter:
-      type: object
-      properties:
-        id: { type: integer, example: 1 }
-        name: { type: string, example: "Ana Pérez" }
-        email: { type: string, example: "ana@example.com" }
-        has_voted: { type: boolean, example: false }
-        created_at: { type: string, format: date-time, example: "2025-11-05T15:30:00Z" }
-
-    CandidateCreate:
-      type: object
-      required: [name]
-      properties:
-        name: { type: string, maxLength: 120 }
-        party: { type: string, nullable: true, maxLength: 120 }
-    Candidate:
-      type: object
-      properties:
-        id: { type: integer, example: 2 }
-        name: { type: string, example: "Laura Gómez" }
-        party: { type: string, nullable: true, example: "Partido Verde" }
-        votes: { type: integer, example: 7 }
-        created_at: { type: string, format: date-time, example: "2025-11-05T15:30:00Z" }
-
-    VoteCreate:
-      type: object
-      required: [voter_id, candidate_id]
-      properties:
-        voter_id: { type: integer, minimum: 1 }
-        candidate_id: { type: integer, minimum: 1 }
-    VoteCreated:
-      type: object
-      properties:
-        id: { type: integer, example: 10 }
-        voter_id: { type: integer, example: 1 }
-        candidate_id: { type: integer, example: 2 }
-        message: { type: string, example: "Voto registrado" }
-
-    VoteListItem:
-      type: object
-      properties:
-        id: { type: integer, example: 10 }
-        voter_id: { type: integer, example: 1 }
-        voter_name: { type: string, example: "Ana Pérez" }
-        candidate_id: { type: integer, example: 2 }
-        candidate_name: { type: string, example: "Laura Gómez" }
-        created_at: { type: string, format: date-time, example: "2025-11-05T15:35:00Z" }
-
-    VoteStatistics:
-      type: object
-      properties:
-        totals:
-          type: object
-          properties:
-            total_votes: { type: integer, example: 12 }
-            total_voters_voted: { type: integer, example: 12 }
-        by_candidate:
-          type: array
-          items:
-            type: object
-            properties:
-              id: { type: integer, example: 2 }
-              name: { type: string, example: "Laura Gómez" }
-              party: { type: string, nullable: true, example: "Partido Verde" }
-              votes: { type: integer, example: 7 }
-              percentage: { type: number, format: float, example: 58.33 }
-
-    Error:
-      type: object
-      properties:
-        error:
-          type: object
-          properties:
-            message: { type: string, example: "Mensaje de error" }
-            stack:
-              type: string
-              description: Solo en entorno de desarrollo
