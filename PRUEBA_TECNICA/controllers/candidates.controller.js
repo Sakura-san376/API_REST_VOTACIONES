@@ -147,7 +147,7 @@ exports.remove = asyncHandler(async (req, res) => {
     }
     res.json({ deleted: true, id });
   } catch (e) {
-    if (e && e.errno === 1451) {
+    if (e?.errno === 1451) {
       const err = new Error(
         "No se puede eliminar: el candidato tiene votos registrados"
       );
